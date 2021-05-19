@@ -1,0 +1,93 @@
+package com.projeto.snaplife.services;
+
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.projeto.snaplife.domain.Cliente;
+import com.projeto.snaplife.domain.Consulta;
+import com.projeto.snaplife.repositories.ConsultaRepository;
+import com.projeto.snaplife.services.exeptions.ObjectNotFoundException;
+
+@Service
+public class ConsultaService {
+	@Autowired
+	private ConsultaRepository consultaRepository;
+	
+	@Autowired
+	private ClienteService clienteService;
+
+	public Consulta findById(Long id) {
+		Optional<Consulta> obj = consultaRepository.findById(id); // optional é pq ele pode receber nulo
+
+		return obj.orElseThrow(() -> new ObjectNotFoundException(
+				"Objeto não encontrado, id:" + id + ", tipo:" + Cliente.class.getName()));
+	}
+
+	public List<Consulta> findAll(Long id_cli) {
+		clienteService.findById(id_cli);
+
+		return consultaRepository.findAllByCliente(id_cli);
+	}
+
+	public Consulta update(Long id, Consulta obj) {
+		System.out.println(obj.toString());
+		Consulta newObj = findById(id);
+		updateData(newObj, obj);
+		
+		System.out.println(newObj.toString());
+		
+		return consultaRepository.save(newObj);
+	}
+
+	private void updateData(Consulta newObj, Consulta obj) {
+		newObj.setAltura(obj.getAltura());
+		newObj.setCliente(obj.getCliente());
+		newObj.setDataConsulta(obj.getDataConsulta());
+		newObj.setDiagnostico(obj.getDiagnostico());
+		newObj.setEstadoCorporal(obj.getEstadoCorporal());
+		newObj.setFatorAtividade(obj.getFatorAtividade());
+		newObj.setHistoricoSocialFamiliar(obj.getHistoricoSocialFamiliar());
+		newObj.setIdade(obj.getIdade());
+		newObj.setPeso(obj.getPeso());
+		newObj.setSexo(obj.getSexo());
+		newObj.setTaxaMB(obj.getTaxaMB());
+		newObj.setCarboidratosOfertados(obj.getCarboidratosOfertados());
+		newObj.setGorduraOfertada(obj.getGorduraOfertada());
+		newObj.setObjetivo(obj.getObjetivo());
+		newObj.setPrescricao(obj.getPrescricao());
+		newObj.setProteinasOfertadas(obj.getProteinasOfertadas());
+		newObj.setVetValorEnergOfertado(obj.getVetValorEnergOfertado());
+		newObj.setGastoEnergTot(obj.getTaxaMB().multiply(obj.getFatorAtividade()));
+	}
+
+	public Consulta create(Long id_cli, Consulta obj) {
+		obj.setCodigo(null);
+		Cliente cli = clienteService.findById(id_cli);
+		
+		Calendar c = Calendar.getInstance();
+		
+		obj.setCliente(cli);
+		obj.setDataConsulta(c.getTime());
+		obj.setGastoEnergTot(obj.getTaxaMB().multiply(obj.getFatorAtividade()));
+		obj.setIdade(c.get(Calendar.YEAR) - toCalendar(cli.getDataNascimento()).get(Calendar.YEAR));
+		
+		return consultaRepository.save(obj);
+	}
+
+	public void delete(Long id) {
+		Consulta obj = findById(id); // validação para ver se obj existe
+		consultaRepository.delete(obj);
+	}
+	
+	public static Calendar toCalendar(Date date){ 
+		  Calendar cal = Calendar.getInstance();
+		  cal.setTime(date);
+		  return cal;
+		}
+
+}
